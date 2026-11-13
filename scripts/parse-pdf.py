@@ -39,6 +39,12 @@ for i, match in enumerate(starts):
     block = re.sub(r'\s+\d+\s*$', ' ', block)
     body = re.sub(r'^\s*\([ABCD]\)\s+\d+\s+', '', block, count=1)
     body = re.sub(r'\s+', ' ', body).strip()
+    # A record can end at a page break before the next category heading. Do not
+    # let the footer page number or the following heading become an option.
+    body = re.sub(r'\s+\d+\s+(?:一、海事法規|二、避碰規則|三、航海常識|四、氣（海）象常識|五、船機常識|六、船藝與操船|七、通訊與緊急措施)(?:\s+\d+\.\s+[^()]+)?\s*$', ' ', body)
+    # PDF text extraction preserves layout spacing. Chinese question text should
+    # not inherit those artificial gaps (for example: 下 圖 為 何 種 繩 結).
+    body = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])', '', body)
     option_matches = list(re.finditer(r'\(([ABCD])\)', body))
     # Page number is useful for later exact diagram attachment; retain an approximate source page.
     page = text[:match.start()].count('\f') + 1
@@ -47,6 +53,9 @@ for i, match in enumerate(starts):
     diagram_label_cluster = bool(re.search(r'(?:下圖|下列|各圖|圖示|圖中).{0,18}\(A\)\s*\(B\)\s*\(C\)\s*\(D\)', body))
     image_options = len(option_matches) < 4 or diagram_label_cluster
     question = body.strip() if image_options else body[:option_matches[0].start()].strip()
+    # A few pages contain repeated full-width A-D glyphs from the adjacent
+    # diagram layer. They are not part of the question sentence.
+    question = re.sub(r'(?:\s*[A-DＡ-Ｄ]){3,}\s*$', '', question).strip()
     if image_options:
         # Some questions use four labeled diagrams as options, so the PDF text layer
         # contains no A-D option strings. Keep the labels selectable and show the
