@@ -42,6 +42,10 @@ for i, match in enumerate(starts):
     # A record can end at a page break before the next category heading. Do not
     # let the footer page number or the following heading become an option.
     body = re.sub(r'\s+\d+\s+(?:一、海事法規|二、避碰規則|三、航海常識|四、氣（海）象常識|五、船機常識|六、船藝與操船|七、通訊與緊急措施)(?:\s+\d+\.\s+[^()]+)?\s*$', ' ', body)
+    # The source PDF also inserts subsection headings after the footer, e.g.
+    # "8 3. 汙染、走私、毒品等" or "13 二、避碰規則 1. 各種航法".
+    # These belong to the next record and must never become option D text.
+    body = re.sub(r'\s+\d+\s+(?:(?:[一二三四五六七]\s*、\s*)[^()\d]+?\s+)?\d+\.\s+[^()]+\s*$', ' ', body)
     # PDF text extraction preserves layout spacing. Chinese question text should
     # not inherit those artificial gaps (for example: 下 圖 為 何 種 繩 結).
     body = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])', '', body)
